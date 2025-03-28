@@ -1,0 +1,6 @@
+pypdf2 # PDFs
+langchain # Various helpers
+chromadb # Vector storage
+langchain-community # Helpers
+ollama # local models
+google-genai # for gemini sdk`
