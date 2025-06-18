@@ -9,8 +9,8 @@
 # What model does it use for a response? - Local ollama (deepseek:8b)
 
 import chromadb
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.llms.ollama import Ollama
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 def populate_and_query_chroma_embedings():
@@ -62,9 +62,7 @@ def populate_and_query_chroma_embedings():
     Answer the question based on the above context: {question}
     """
 
-    formatted_prompt = PROMPT_TEMPLATE.format(
-        context=str(results["documents"]), question=question
-    )
+    formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=question)
     print(formatted_prompt)
 
     model = Ollama(model="deepseek-r1:8b")

@@ -5,9 +5,9 @@
 # What model does it use for a response? - Local ollama (Deepseek:8b)
 
 import chromadb
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.llms.ollama import Ollama
 import PyPDF2
+from langchain_community.llms.ollama import Ollama
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 def extract_text_from_pdf(pdf_path):
@@ -72,9 +72,7 @@ def populate_and_query_chroma_embedings():
     Answer the question based on the above context: {question}
     """
 
-    formatted_prompt = PROMPT_TEMPLATE.format(
-        context=str(results["documents"]), question=question
-    )
+    formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=question)
     print(formatted_prompt)
 
     model = Ollama(model="deepseek-r1:8b")

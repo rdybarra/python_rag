@@ -9,8 +9,9 @@
 # "GEMINI_API_KEY" set in ".env" file at root.
 
 import os
-from dotenv import load_dotenv
+
 import chromadb
+from dotenv import load_dotenv
 from google import genai
 
 
@@ -47,9 +48,7 @@ def populate_and_query_gemini_embeddings():
     # production code?
     collection.add(documents=documents, embeddings=embeddings, ids=ids)
 
-    embeddings_for_query = get_embeddings_for_input(
-        "This is a query about popular florida orchard"
-    )
+    embeddings_for_query = get_embeddings_for_input("This is a query about popular florida orchard")
 
     results = collection.query(
         query_embeddings=embeddings_for_query,

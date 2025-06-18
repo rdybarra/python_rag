@@ -40,9 +40,7 @@ def populate_and_query_ollama_embeddings():
     # production code?
     collection.add(documents=documents, embeddings=embeddings, ids=ids)
 
-    embeddings_for_query = get_embeddings_for_input(
-        "This is a query about spikey hawaiian fruit"
-    )
+    embeddings_for_query = get_embeddings_for_input("This is a query about spikey hawaiian fruit")
 
     results = collection.query(
         query_embeddings=embeddings_for_query,

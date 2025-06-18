@@ -9,11 +9,12 @@
 # "GEMINI_API_KEY" set in ".env" file at root.
 
 import os
-from dotenv import load_dotenv
-import chromadb
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from google import genai
 import uuid
+
+import chromadb
+from dotenv import load_dotenv
+from google import genai
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 def get_embeddings_for_input(input):
@@ -72,17 +73,13 @@ def gemini_query():
     Answer the question based on the above context: {question}
     """
 
-    formatted_prompt = PROMPT_TEMPLATE.format(
-        context=str(results["documents"]), question=question
-    )
+    formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=question)
     print(formatted_prompt)
 
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=gemini_api_key)
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash", contents=[formatted_prompt]
-    )
+    response = client.models.generate_content(model="gemini-2.0-flash", contents=[formatted_prompt])
     print("ANSWER")
     print(response.text)
 
