@@ -9,6 +9,7 @@
 # What model does it use for a response? - Local ollama (deepseek:8b)
 
 import chromadb
+import python_rag_common
 from langchain_community.llms.ollama import Ollama
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -40,7 +41,10 @@ def populate_and_query_chroma_embedings():
     # print(texts)
 
     chroma_client = chromadb.Client()
-    collection = chroma_client.create_collection(name="my_collection")
+    embed_func = python_rag_common.get_chromadb_embedding_function()
+    collection = chroma_client.create_collection(
+        name="my_collection", embedding_function=embed_func
+    )
 
     collection.add(documents=texts, ids=ids)
 

@@ -6,6 +6,7 @@
 # What model does it use for a response? - None, just vector search
 
 import chromadb
+import python_rag_common
 
 
 def populate_and_query_chroma_embedings():
@@ -18,7 +19,10 @@ def populate_and_query_chroma_embedings():
     ]
 
     chroma_client = chromadb.Client()
-    collection = chroma_client.create_collection(name="my_collection")
+    embed_func = python_rag_common.get_chromadb_embedding_function()
+    collection = chroma_client.create_collection(
+        name="my_collection", embedding_function=embed_func
+    )
 
     collection.add(documents=documents, ids=["idpinapple", "idoranages"])
 
