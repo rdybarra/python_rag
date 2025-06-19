@@ -77,7 +77,7 @@ def populate_and_query_chroma_embeddings(
     python_rag_common.print_collection(collection)
     model = OllamaLLM(model=model_name)
 
-    default_query = "Where should I store my trash and recycle bins?"
+    default_query = "When does the game end?"
     print(f"\nExample: {default_query}")
 
     while True:
@@ -107,11 +107,11 @@ def populate_and_query_chroma_embeddings(
 
 def main():
     parser = python_rag_common.init_parser(DESC)
+    parser.add_argument("pdf_path", help="source PDF")
     parser.add_argument("--ollama-model", default="deepseek-r1:8b", help="Ollama model to use")
     args = parser.parse_args()
 
-    # THIS PDF IS NOT IN SOURCE CONTROL
-    pdf_path = Path("data/hoa_canopy_grove.pdf")
+    pdf_path = Path(args.pdf_path)
     if not (pdf_path.exists() and pdf_path.is_file()):
         raise Exception(f"{pdf_path}: Is not an existing file")
     populate_and_query_chroma_embeddings(pdf_path, args.interactive, args.ollama_model)
