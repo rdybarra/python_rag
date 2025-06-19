@@ -10,7 +10,7 @@
 
 import chromadb
 import python_rag_common
-from langchain_community.llms.ollama import Ollama
+from langchain_ollama.llms import OllamaLLM
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
@@ -70,7 +70,7 @@ def populate_and_query_chroma_embedings():
     formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=question)
     print(formatted_prompt)
 
-    model = Ollama(model="deepseek-r1:8b")
+    model = OllamaLLM(model="deepseek-r1:8b")
     response_text = model.invoke(formatted_prompt)
 
     print("ANSWER")
