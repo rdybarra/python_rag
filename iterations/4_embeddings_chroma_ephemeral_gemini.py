@@ -11,6 +11,7 @@
 import os
 
 import chromadb
+import python_rag_common
 from dotenv import load_dotenv
 from google import genai
 
@@ -47,6 +48,7 @@ def populate_and_query_gemini_embeddings():
     # a greater separation of concerns. Perhaps there are preformance reasons not to do this in
     # production code?
     collection.add(documents=documents, embeddings=embeddings, ids=ids)
+    python_rag_common.print_collection(collection)
 
     embeddings_for_query = get_embeddings_for_input("This is a query about popular florida orchard")
 

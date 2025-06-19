@@ -25,6 +25,7 @@ def populate_and_query_chroma_embedings():
     )
 
     collection.add(documents=documents, ids=["idpinapple", "idoranages"])
+    python_rag_common.print_collection(collection)
 
     results = collection.query(
         query_texts="A question about most florida juice",

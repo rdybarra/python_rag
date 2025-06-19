@@ -12,6 +12,7 @@ import os
 import uuid
 
 import chromadb
+import python_rag_common
 from dotenv import load_dotenv
 from google import genai
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -49,9 +50,7 @@ def gemini_query():
 
     chroma_client = chromadb.Client()
     collection = chroma_client.create_collection(name="5_gemini")
-
-    print(len(ids))
-    print(len(embeddings))
+    python_rag_common.print_collection(collection)
 
     collection.add(documents=texts, embeddings=embeddings, ids=ids)
 

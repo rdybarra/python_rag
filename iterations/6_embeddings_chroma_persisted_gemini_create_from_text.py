@@ -13,6 +13,7 @@ import os
 import uuid
 
 import chromadb
+import python_rag_common
 from google import genai
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -54,7 +55,7 @@ def gemini_query():
     print(len(embeddings))
 
     collection.add(documents=texts, embeddings=embeddings, ids=ids)
-
+    python_rag_common.print_collection(collection)
     print("collection added")
 
     question = "Who settled Escondido?"

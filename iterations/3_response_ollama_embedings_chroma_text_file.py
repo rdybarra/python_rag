@@ -47,6 +47,7 @@ def populate_and_query_chroma_embedings():
     )
 
     collection.add(documents=texts, ids=ids)
+    python_rag_common.print_collection(collection)
 
     question = "Who settled Escondido?"
 
