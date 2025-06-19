@@ -1,15 +1,22 @@
-# This script queries embeddings using chromaDBs built-in embedding model.
-# It instantiates chromaDB as an ephermal instance
-
-# Where does the search corpus come from? - Variables in the script
-# How does it create embeddings? - Built-in ChromaDB capability
-# What model does it use for a response? - None, just vector search
+import textwrap
+from pprint import pprint
 
 import chromadb
 import python_rag_common
 
+DESC = textwrap.dedent(
+    """\
+This script queries embeddings using chromaDBs built-in embedding model.
+It instantiates chromaDB as an ephemeral instance.
 
-def populate_and_query_chroma_embedings():
+*  Where does the search corpus come from? Variables in the script
+*  How does it create embeddings? Built-in ChromaDB capability
+*  What model does it use for a response? None, just vector search
+"""
+)
+
+
+def populate_and_query_chroma_embeddings(is_interactive=False):
     # This will use ChromaDBs embeddings. It performs better in my testing than the
     # ollama model nomic-embed-text that I have locally. However, it's still not
     # amazing.
@@ -24,18 +31,30 @@ def populate_and_query_chroma_embedings():
         name="my_collection", embedding_function=embed_func
     )
 
-    collection.add(documents=documents, ids=["idpinapple", "idoranages"])
+    collection.add(documents=documents, ids=["id-pineapple", "id-oranges"])
     python_rag_common.print_collection(collection)
 
-    results = collection.query(
-        query_texts="A question about most florida juice",
-        n_results=2,  # how many results to return
-    )
-    print(results)
+    default_query = "A question about most florida juice"
+    print(f"\nExample: {default_query}")
+
+    while True:
+        query = input("\nQuery (or q/quit to quit): ") if is_interactive else default_query
+        if query.lower() in ["q", "quit"]:
+            break
+
+        results = collection.query(
+            query_texts=query,
+            n_results=2,  # how many results to return
+        )
+        pprint(results)
+        if not is_interactive:
+            break
 
 
 def main():
-    populate_and_query_chroma_embedings()
+    parser = python_rag_common.init_parser(DESC)
+    args = parser.parse_args()
+    populate_and_query_chroma_embeddings(args.interactive)
 
 
 if __name__ == "__main__":

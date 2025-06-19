@@ -1,3 +1,4 @@
+import argparse
 import platform
 
 from chromadb.utils import embedding_functions
@@ -12,6 +13,17 @@ def get_chromadb_embedding_function():
     if platform.system() == "Darwin" and platform.processor() == "i386":
         ef = ONNXMiniLM_L6_V2(preferred_providers=["CPUExecutionProvider"])
     return ef
+
+
+def init_parser(desc, epilog=None):
+    """Reusable arg parser that supports --interactive flag"""
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter, description=desc, epilog=epilog
+    )
+    parser.add_argument(
+        "-i", "--interactive", default=False, action="store_true", help="prompt user for query"
+    )
+    return parser
 
 
 def print_collection(collection):

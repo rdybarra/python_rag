@@ -1,20 +1,37 @@
-# This script queries embeddings using chromaDBs built-in embedding model and then
-# calls a local ollama model to get an answer.
-# In this case I'm using deepseek's 8b parameter model: https://ollama.com/library/deepseek-r1
-# The embeddings come from an external text file.
-# It instantiates chromaDB as an ephermal instance
-
-# Where does the search corpus come from? - Text file
-# How does it create embeddings? - ChromaDBs built-in capability
-# What model does it use for a response? - Local ollama (deepseek:8b)
+import textwrap
+from pprint import pprint
 
 import chromadb
 import python_rag_common
 from langchain_ollama.llms import OllamaLLM
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+DESC = textwrap.dedent(
+    """\
+This script queries embeddings using chromaDBs built-in embedding model and then
+calls a local ollama model to get an answer.
+In this case I'm defaulting to deepseek's 8b parameter model: https://ollama.com/library/deepseek-r1
+The embeddings come from an external text file.
+It instantiates chromaDB as an ephemeral instance
 
-def populate_and_query_chroma_embedings():
+*  Where does the search corpus come from? Text file
+*  How does it create embeddings? ChromaDBs built-in capability
+*  What model does it use for a response? Local ollama (deepseek:8b)
+"""
+)
+
+PROMPT_TEMPLATE = """\
+Answer the question based only on the following context:
+
+{context}
+
+---
+
+Answer the question based on the above context: {question}
+"""
+
+
+def populate_and_query_chroma_embeddings(is_interactive=False, model_name="deepseek-r1:8b"):
     # This will use ChromaDBs embeddings. It performs better in my testing than the
     # ollama model nomic-embed-text that I have locally. However, it's still not
     # amazing
@@ -48,37 +65,41 @@ def populate_and_query_chroma_embedings():
 
     collection.add(documents=texts, ids=ids)
     python_rag_common.print_collection(collection)
+    model = OllamaLLM(model=model_name)
 
-    question = "Who settled Escondido?"
+    default_query = "Who settled Escondido?"
+    print(f"\nExample: {default_query}")
 
-    results = collection.query(
-        query_texts=question,
-        n_results=4,
-    )
-    print(results)
+    while True:
+        query = (
+            input(f"\nQuery [{model_name}] (or q/quit to quit): ")
+            if is_interactive
+            else default_query
+        )
+        if query.lower() in ["q", "quit"]:
+            break
 
-    PROMPT_TEMPLATE = """
-    Answer the question based only on the following context:
+        results = collection.query(
+            query_texts=query,
+            n_results=4,
+        )
+        pprint(results)
 
-    {context}
+        formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=query)
+        print(formatted_prompt)
 
-    ---
-
-    Answer the question based on the above context: {question}
-    """
-
-    formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=question)
-    print(formatted_prompt)
-
-    model = OllamaLLM(model="deepseek-r1:8b")
-    response_text = model.invoke(formatted_prompt)
-
-    print("ANSWER")
-    print(response_text)
+        response_text = model.invoke(formatted_prompt)
+        print("ANSWER")
+        print(response_text)
+        if not is_interactive:
+            break
 
 
 def main():
-    populate_and_query_chroma_embedings()
+    parser = python_rag_common.init_parser(DESC)
+    parser.add_argument("--ollama-model", default="deepseek-r1:8b", help="Ollama model to use")
+    args = parser.parse_args()
+    populate_and_query_chroma_embeddings(args.interactive, args.ollama_model)
 
 
 if __name__ == "__main__":
