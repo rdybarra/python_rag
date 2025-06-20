@@ -1,13 +1,32 @@
-# Search a PDF, get an answer.
-
-# Where does the search corpus come from? - PDF
-# How does it create embeddings? - ChromaDB built-in capability
-# What model does it use for a response? - Local ollama (Deepseek:8b)
+import textwrap
+from pathlib import Path
+from pprint import pprint
 
 import chromadb
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.llms.ollama import Ollama
 import PyPDF2
+import python_rag_common
+from langchain_ollama.llms import OllamaLLM
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+DESC = textwrap.dedent(
+    """\
+Search a PDF, get an answer.
+
+* Where does the search corpus come from? PDF
+* How does it create embeddings? ChromaDB built-in capability
+* What model does it use for a response? Local ollama (Deepseek:8b)
+"""
+)
+
+PROMPT_TEMPLATE = """\
+Answer the question based only on the following context:
+
+{context}
+
+---
+
+Answer the question based on the above context: {question}
+"""
 
 
 def extract_text_from_pdf(pdf_path):
@@ -27,13 +46,12 @@ def extract_text_from_pdf(pdf_path):
     return extracted_text
 
 
-def populate_and_query_chroma_embedings():
+def populate_and_query_chroma_embeddings(
+    pdf_path, is_interactive=False, model_name="deepseek-r1:8b"
+):
     # This will use ChromaDBs embeddings. It performs better in my testing than the
     # ollama model nomic-embed-text that I have locally. However, it's still not
     # amazing
-
-    # THIS PDF IS NOT IN SOURCE CONTROL
-    pdf_path = "data/hoa_canopy_grove.pdf"
     text = extract_text_from_pdf(pdf_path)
     print(text[:200])
 
@@ -50,42 +68,53 @@ def populate_and_query_chroma_embedings():
     # print(texts)
 
     chroma_client = chromadb.Client()
-    collection = chroma_client.create_collection(name="my_collection")
+    embed_func = python_rag_common.get_chromadb_embedding_function()
+    collection = chroma_client.create_collection(
+        name="my_collection", embedding_function=embed_func
+    )
 
     collection.add(documents=texts, ids=ids)
+    python_rag_common.print_collection(collection)
+    model = OllamaLLM(model=model_name)
 
-    question = "Where should I store my trash and recycle bins?"
+    default_query = "When does the game end?"
+    print(f"\nExample: {default_query}")
 
-    results = collection.query(
-        query_texts=question,
-        n_results=4,
-    )
-    print(results)
+    while True:
+        query = (
+            input(f"\nQuery [{model_name}] (or q/quit to quit): ")
+            if is_interactive
+            else default_query
+        )
+        if query.lower() in ["q", "quit"]:
+            break
 
-    PROMPT_TEMPLATE = """
-    Answer the question based only on the following context:
+        results = collection.query(
+            query_texts=query,
+            n_results=4,
+        )
+        pprint(results)
 
-    {context}
+        formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=query)
+        print(formatted_prompt)
 
-    ---
-
-    Answer the question based on the above context: {question}
-    """
-
-    formatted_prompt = PROMPT_TEMPLATE.format(
-        context=str(results["documents"]), question=question
-    )
-    print(formatted_prompt)
-
-    model = Ollama(model="deepseek-r1:8b")
-    response_text = model.invoke(formatted_prompt)
-
-    print("ANSWER")
-    print(response_text)
+        response_text = model.invoke(formatted_prompt)
+        print("ANSWER")
+        print(response_text)
+        if not is_interactive:
+            break
 
 
 def main():
-    populate_and_query_chroma_embedings()
+    parser = python_rag_common.init_parser(DESC)
+    parser.add_argument("pdf_path", help="source PDF")
+    parser.add_argument("--ollama-model", default="deepseek-r1:8b", help="Ollama model to use")
+    args = parser.parse_args()
+
+    pdf_path = Path(args.pdf_path)
+    if not (pdf_path.exists() and pdf_path.is_file()):
+        raise Exception(f"{pdf_path}: Is not an existing file")
+    populate_and_query_chroma_embeddings(pdf_path, args.interactive, args.ollama_model)
 
 
 if __name__ == "__main__":

@@ -1,19 +1,42 @@
-# This script creates and queries embeddings from a gemini embedding model and stores
-# them in an EPHEMERAL instance of ChromaDB.
-# It searches chromaDB to add context and then searches using gemini.
-
-# Where does the search corpus come from? - Text file
-# How does it create embeddings? - Gemini
-# What model does it use for a response? - Gemini
-
-# "GEMINI_API_KEY" set in ".env" file at root.
-
 import os
-from dotenv import load_dotenv
-import chromadb
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from google import genai
+import textwrap
 import uuid
+from pprint import pprint
+
+import chromadb
+import python_rag_common
+from dotenv import load_dotenv
+from google import genai
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+DESC = textwrap.dedent(
+    """\
+This script creates and queries embeddings from a gemini embedding model and stores
+them in an EPHEMERAL instance of ChromaDB.
+It searches chromaDB to add context and then searches using gemini.
+
+* Where does the search corpus come from? Text file
+* How does it create embeddings? Gemini
+* What model does it use for a response? Gemini
+"""
+)
+
+EPILOG = textwrap.dedent(
+    """\
+Requirements
+"GEMINI_API_KEY" set in ".env" file at root.
+"""
+)
+
+PROMPT_TEMPLATE = """\
+Answer the question based only on the following context:
+
+{context}
+
+---
+
+Answer the question based on the above context: {question}
+"""
 
 
 def get_embeddings_for_input(input):
@@ -26,7 +49,7 @@ def get_embeddings_for_input(input):
     return result.embeddings[0].values
 
 
-def gemini_query():
+def gemini_query(is_interactive=False):
     load_dotenv()
 
     # Open the file in read mode
@@ -48,47 +71,42 @@ def gemini_query():
 
     chroma_client = chromadb.Client()
     collection = chroma_client.create_collection(name="5_gemini")
-
-    print(len(ids))
-    print(len(embeddings))
-
     collection.add(documents=texts, embeddings=embeddings, ids=ids)
-
-    question = "Who settled Escondido?"
-
-    results = collection.query(
-        query_embeddings=get_embeddings_for_input(question),
-        n_results=4,
-    )
-    print(results)
-
-    PROMPT_TEMPLATE = """
-    Answer the question based only on the following context:
-
-    {context}
-
-    ---
-
-    Answer the question based on the above context: {question}
-    """
-
-    formatted_prompt = PROMPT_TEMPLATE.format(
-        context=str(results["documents"]), question=question
-    )
-    print(formatted_prompt)
+    python_rag_common.print_collection(collection)
 
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=gemini_api_key)
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash", contents=[formatted_prompt]
-    )
-    print("ANSWER")
-    print(response.text)
+    default_query = "Who settled Escondido?"
+    print(f"\nExample: {default_query}")
+
+    while True:
+        query = input("\nQuery (or q/quit to quit): ") if is_interactive else default_query
+        if query.lower() in ["q", "quit"]:
+            break
+
+        results = collection.query(
+            query_embeddings=get_embeddings_for_input(query),
+            n_results=4,
+        )
+        pprint(results)
+
+        formatted_prompt = PROMPT_TEMPLATE.format(context=str(results["documents"]), question=query)
+        pprint(formatted_prompt)
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash", contents=[formatted_prompt]
+        )
+        print("ANSWER")
+        print(response.text)
+        if not is_interactive:
+            break
 
 
 def main():
-    gemini_query()
+    parser = python_rag_common.init_parser(DESC, EPILOG)
+    args = parser.parse_args()
+    gemini_query(args.interactive)
 
 
 if __name__ == "__main__":
